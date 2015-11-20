@@ -58,7 +58,6 @@ class TCPServer(Connection):
 
     def echo(self,commandArgs):
         #remove spaces at the str beg
-        commandArgs.lstrip()
         self.sendMsg(self.contactSock,commandArgs)
 
     def time(self,commandArgs):
@@ -77,8 +76,8 @@ class TCPServer(Connection):
             if len(message) == 0:
                 break
             
-            regExp = re.compile("( )*[A-Za-z0-9]+(( )+(.)+)?(\r\n|\n)")
-            if not regExp.match(message):
+            regExp = re.compile("[A-Za-z0-9_]+ *.*")
+            if regExp.match(message) is None:
                 self.sendMsg(self.contactSock,"invalid command format \"" + message)
                 continue
 
@@ -97,7 +96,6 @@ class TCPServer(Connection):
 
 if __name__ == "__main__":
     
-
     server = TCPServer(None,sys.argv[1])
     server.workWithClients()
     

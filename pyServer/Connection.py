@@ -30,8 +30,6 @@ class Connection:
            total += len(data)
        return data 
 
-    def checkCommandExistance(self,command):
-        return command in self.commands
 
     def catchCommand(self,commandMsg):
        commandRegEx = re.compile("[A-Za-z0-9_]+")
@@ -42,11 +40,13 @@ class Connection:
            return False
        #group()	Return the string matched by the RE
        command = matchObj.group()
-       #end()	Return the ending position of the match
-       commandEndPos = matchObj.end()
-       #cut finding command from the commandMes
-       request = commandMsg[commandEndPos:]
-
-       if(checkCommandExistance(command) == True):
+      
+       if command in self.commands:
+           #end() Return the ending position of the match
+           commandEndPos = matchObj.end()
+           #cut finding command from the commandMes
+           request = commandMsg[commandEndPos:]
+           #cut spaces after command
+           request.lstrip()
            self.commands[command](request)
     
