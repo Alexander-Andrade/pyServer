@@ -15,12 +15,18 @@ class Connection:
     def recvMsg(self,sock):
         # first byte = message length
         length = int.from_bytes(sock.recv(1),byteorder='big') 
-        return  repr(sock.recv(length))
+        return  sock.recv(length).decode('utf-8')
 
     def sendMsg(self,sock,msg):
         #send length first
         sock.send(len(msg).to_bytes(1,byteorder='big'))
         sock.sendall(msg.encode('utf-8'))
+
+    def sendNum(self,sock,n):
+        sock.send(n.to_bytes(4,byteorder='big'))
+
+    def recvNum(self,sock):
+        return int.from_bytes(sock.recv(4),byteorder='big')
 
     def recvall(self,sock,length):
        total = 0
@@ -40,7 +46,6 @@ class Connection:
            return False
        #group()	Return the string matched by the RE
        command = matchObj.group()
-      
        if command in self.commands:
            #end() Return the ending position of the match
            commandEndPos = matchObj.end()
@@ -49,4 +54,5 @@ class Connection:
            #cut spaces after command
            request.lstrip()
            self.commands[command](request)
-    
+           return True
+       return False 
