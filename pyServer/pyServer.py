@@ -13,8 +13,15 @@ class TCPServer(Connection):
         self.IP = IP
         self.port = port
         self.__createServer(IP,port,nConnections)
+        self.__fillCommandDict()
 
 
+    def __fillCommandDict(self):
+        self.commands.update({'echo':self.echo,
+                              'time':self.time,
+                              'download':self.sendFile,
+                              'upload':self.recvFile})
+       
     def __createServer(self, IP,port,nConnections = 1):
        
         #  getaddrinfo returns a list of 5-tuples with the following structure(family, type, proto, canonname, sockaddr)
@@ -49,35 +56,39 @@ class TCPServer(Connection):
             print("can't create server")
             sys.exit(1)
 
-    
-    def __acceptNewClient(self):
+    def echo(self,commandArgs):
+        #remove spaces at the str beg
+        commandArgs.lstrip()
+        self.sendMsg(self.contactSock,commandArgs)
 
-        """conn is a new socket object usable to send and receive data
-        on the connection, and address is the address bound to the socket
-        on the other end of the connection.
-        """
-        self.contactSock,self.curClientAddr = self.servSock.accept()
-      
+    def time(self,commandArgs):
+        pass
+
+    def sendFile(self,commandArgs):
+        pass
+
+    def recvFile(self,commandArgs):
+        pass
 
     def __clientCommandsHandling(self):
 
         while True:
-            message = self.contactSock.recv()
+            message = self.recvMsg(self.contactSock)
             if len(message) == 0:
                 break
             
             regExp = re.compile("( )*[A-Za-z0-9]+(( )+(.)+)?(\r\n|\n)")
             if not regExp.match(message):
-                self.contactSock.sendMsg("invalid command format \"" + message)
+                self.sendMsg(self.contactSock,"invalid command format \"" + message)
                 continue
 
-            self.contactSock.sendMsg("abra cadabra");
+            self.sendMsg(self.contactSock,"abra cadabra")
 
 
     def workWithClients(self):
 
         while True:
-            self.__acceptNewClient()
+            self.contactSock,self.curClientAddr = self.servSock.accept()
             self.__clientCommandsHandling()
     
       
@@ -87,6 +98,6 @@ class TCPServer(Connection):
 if __name__ == "__main__":
     
 
-    server = TCPServer(sys.argv[1],sys.argv[2])
+    server = TCPServer(None,sys.argv[1])
     server.workWithClients()
     

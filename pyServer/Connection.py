@@ -14,12 +14,12 @@ class Connection:
 
     def recvMsg(self,sock):
         # first byte = message length
-        length = int(sock.recv(1)) 
+        length = int.from_bytes(sock.recv(1),byteorder='big') 
         return  repr(sock.recv(length))
 
     def sendMsg(self,sock,msg):
         #send length first
-        sock.send(len(msg).to_bytes(1))
+        sock.send(len(msg).to_bytes(1,byteorder='big'))
         sock.sendall(msg.encode('utf-8'))
 
     def recvall(self,sock,length):
