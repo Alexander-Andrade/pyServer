@@ -28,7 +28,18 @@ class Connection:
            #cut finding command from the commandMes
            request = commandMsg[commandEndPos:]
            #cut spaces after command
-           request.lstrip()
+           request = request.lstrip()
            self.commands[command](request)
            return True
        return False 
+
+
+    def sendfile(self,sock,commandArgs,recoveryFunc):
+        fileWorker = FileWorker(sock,recoveryFunc,self.sendBufLen,self.timeOut)
+        fileWorker.send(commandArgs)
+        
+
+    def receivefile(self,sock,commandArgs,recoveryFunc):
+        fileWorker = FileWorker(sock,recoveryFunc,self.sendBufLen,self.timeOut)
+        fileWorker.receive(commandArgs)
+                

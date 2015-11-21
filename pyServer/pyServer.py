@@ -1,7 +1,9 @@
 ﻿import sys  #for IP and port passing
 import socket
 import re   #regular expressions
-from Connection import*
+from Connection import Connection
+from FileWorker import FileWorkerError
+from SocketWrapper import SocketWrapper
 import datetime
 import multiprocessing
 import types
@@ -14,6 +16,7 @@ class TCPServer(Connection):
         super().__init__(sendBuflen,timeOut)
         self.IP = IP
         self.port = port
+        self.addrInfo = None
         self.__createServer(IP,port,nConnections)
         self.__fillCommandDict()
         self.clientsId = []
@@ -28,9 +31,9 @@ class TCPServer(Connection):
 
     def __createServer(self, IP,port,nConnections = 1):
         #  getaddrinfo returns a list of 5-tuples with the following structure(family, type, sock, canonname, sockaddr)
-        for addrInfo in socket.getaddrinfo(self.IP,self.port,socket.AF_INET,
-                                           socket.SOCK_STREAM,socket.IPsock_TCP,socket.AI_PASSIVE):
-            af_family,socktype,sock,canonname,sockaddr = addrInfo
+        for self.addrInfo in socket.getaddrinfo(self.IP,self.port,socket.AF_INET,
+                                           socket.SOCK_STREAM,socket.IPPROTO_TCP,socket.AI_PASSIVE):
+            af_family,socktype,sock,canonname,sockaddr = self.addrInfo
             try:
                 self.servSock = socket.socket(af_family,socktype,sock)
                 
@@ -57,11 +60,11 @@ class TCPServer(Connection):
 
 
     def echo(self,commandArgs):
-        self.talksock.sendMsg(self.contactSock,commandArgs)
+        self.talksock.sendMsg(commandArgs)
 
 
     def time(self,commandArgs):
-        self.talksock.sendMsg(self.contactSock, str(datetime.datetime.now()) )
+        self.talksock.sendMsg(str(datetime.datetime.now()) )
 
     def quit(self,commandArgs):
         self.talksock.raw_sock.shutdown(socket.SHUT_RD)

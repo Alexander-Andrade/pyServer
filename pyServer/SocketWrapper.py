@@ -12,8 +12,8 @@ class SocketWrapper:
 
     def sendMsg(self,msg):
         #send length first
-        self.sock.send(len(msg).to_bytes(1,byteorder='big'))
-        self.sock.sendall(msg.encode('utf-8'))
+        self.raw_sock.send(len(msg).to_bytes(1,byteorder='big'))
+        self.raw_sock.sendall(msg.encode('utf-8'))
 
     def sendNum(self,n):
         self.raw_sock.send(n.to_bytes(4,byteorder='big'))
