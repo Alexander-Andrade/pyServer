@@ -50,3 +50,14 @@ class SocketWrapper:
     def getReceiveBufferSize(self):
         return self.raw_sock.getsockopt(SOL_SOCKET, SO_RCVBUF)
     
+    def setSendTimeout(self,timeOutSec):
+        self.raw_sock.setsockopt(SOL_SOCKET, SO_SNDTIMEO, timeOutSec)
+
+    def disableSendTimeout(self):
+        self.raw_sock.setsockopt(SOL_SOCKET, SO_RCVTIMEO,0)
+
+    def setReceiveTimeout(self,timeOutSec):
+        self.raw_sock.setsockopt(SOL_SOCKET, SO_RCVTIMEO, timeOutSec)
+
+    def disableReceiveTimeout(self):
+        self.raw_sock.setsockopt(SOL_SOCKET, SO_SNDTIMEO,0)
