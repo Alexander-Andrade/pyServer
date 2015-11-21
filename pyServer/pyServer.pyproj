@@ -28,7 +28,13 @@
     <Compile Include="Connection.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="FileWorker.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="pyServer.py" />
+    <Compile Include="SocketWrapper.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

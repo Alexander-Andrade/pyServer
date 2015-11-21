@@ -3,6 +3,8 @@ import socket
 import re   #regular expressions
 from Connection import*
 import datetime
+import multiprocessing
+import types
 
 class TCPServer(Connection):
 
@@ -25,12 +27,12 @@ class TCPServer(Connection):
        
 
     def __createServer(self, IP,port,nConnections = 1):
-        #  getaddrinfo returns a list of 5-tuples with the following structure(family, type, proto, canonname, sockaddr)
+        #  getaddrinfo returns a list of 5-tuples with the following structure(family, type, sock, canonname, sockaddr)
         for addrInfo in socket.getaddrinfo(self.IP,self.port,socket.AF_INET,
-                                           socket.SOCK_STREAM,socket.IPPROTO_TCP,socket.AI_PASSIVE):
-            af_family,socktype,proto,canonname,sockaddr = addrInfo
+                                           socket.SOCK_STREAM,socket.IPsock_TCP,socket.AI_PASSIVE):
+            af_family,socktype,sock,canonname,sockaddr = addrInfo
             try:
-                self.servSock = socket.socket(af_family,socktype,proto)
+                self.servSock = socket.socket(af_family,socktype,sock)
                 
                 """All errors raise exceptions. The normal exceptions for invalid argument
                 types and out-of-memory conditions can be raised; starting from Python 3.3,
@@ -55,15 +57,15 @@ class TCPServer(Connection):
 
 
     def echo(self,commandArgs):
-        self.sendMsg(self.contactSock,commandArgs)
+        self.talksock.sendMsg(self.contactSock,commandArgs)
 
 
     def time(self,commandArgs):
-        self.sendMsg(self.contactSock, str(datetime.datetime.now()) )
+        self.talksock.sendMsg(self.contactSock, str(datetime.datetime.now()) )
 
     def quit(self,commandArgs):
-        self.contactSock.shutdown(socket.SHUT_RD)
-        self.contactSock.close()
+        self.talksock.raw_sock.shutdown(socket.SHUT_RD)
+        self.talksock.raw_sock.close()
 
 
     def sendFile(self,commandArgs):
@@ -76,15 +78,15 @@ class TCPServer(Connection):
 
     def __clientCommandsHandling(self):
         while True:
-            message = self.recvMsg(self.contactSock)
+            message = self.talksock.recvMsg()
             if len(message) == 0:
                 break
             regExp = re.compile("[A-Za-z0-9_]+ *.*")
             if regExp.match(message) is None:
-                self.sendMsg(self.contactSock,"invalid command format \"" + message + "\"")
+                self.talksock.sendMsg("invalid command format \"" + message + "\"")
                 continue
             if not self.catchCommand(message):
-                self.sendMsg(self.contactSock,"unknown command")
+                self.talksock.sendMsg("unknown command")
             #quit
             if message.find("quit") != -1:
                 break 
@@ -99,9 +101,10 @@ class TCPServer(Connection):
             
                     
     def __registerNewClient(self):
-        self.contactSock,self.curClientAddr = self.servSock.accept()
+        contactSock,self.curClientAddr = self.servSock.accept()
+        self.talksock = SocketWrapper(contactSock)
         #get id from client
-        id = self.recvNum(self.contactSock)
+        id = self.talksock.recvNum()
         self.writeClientId(id)
 
     def workWithClients(self):
@@ -109,12 +112,9 @@ class TCPServer(Connection):
             self.__registerNewClient()
             self.__clientCommandsHandling()
     
-      
-       
-        
-
+   
 if __name__ == "__main__":
-
+    
     server = TCPServer(None,sys.argv[1])
     server.workWithClients()
     
