@@ -2,9 +2,10 @@
 
 class SocketWrapper:
 
-    def __init__(self, sock):
-        self.raw_sock = sock
-   
+    def __init__(self,**sockArgs):
+        self.raw_sock = sockArgs.get('raw_sock')
+        self.addr_info = sockArgs.get('addrInfo')
+    
     def recvMsg(self):
         # first byte = message length
         length = int.from_bytes(self.raw_sock.recv(1),byteorder='big') 

@@ -16,7 +16,6 @@ class TCPServer(Connection):
         super().__init__(sendBuflen,timeOut)
         self.IP = IP
         self.port = port
-        self.addrInfo = None
         self.__createServer(IP,port,nConnections)
         self.__fillCommandDict()
         self.clientsId = []
@@ -31,12 +30,11 @@ class TCPServer(Connection):
 
     def __createServer(self, IP,port,nConnections = 1):
         #  getaddrinfo returns a list of 5-tuples with the following structure(family, type, sock, canonname, sockaddr)
-        for self.addrInfo in socket.getaddrinfo(self.IP,self.port,socket.AF_INET,
+        for addrInfo in socket.getaddrinfo(self.IP,self.port,socket.AF_INET,
                                            socket.SOCK_STREAM,socket.IPPROTO_TCP,socket.AI_PASSIVE):
-            af_family,socktype,sock,canonname,sockaddr = self.addrInfo
+            af_family,socktype,sock,canonname,sockaddr = addrInfo
             try:
                 self.servSock = socket.socket(af_family,socktype,sock)
-                
                 """All errors raise exceptions. The normal exceptions for invalid argument
                 types and out-of-memory conditions can be raised; starting from Python 3.3,
                 errors related to socket or address semantics raise OSError or one of its
@@ -52,11 +50,11 @@ class TCPServer(Connection):
                 self.servSock.close()
                 self.servSock = None
                 continue
-            
             break
         if self.servSock is None:
             print("can't create server")
             sys.exit(1)
+        self.talksock = SocketWrapper(addr_info=addrInfo)
 
 
     def echo(self,commandArgs):
@@ -71,13 +69,19 @@ class TCPServer(Connection):
         self.talksock.raw_sock.close()
 
 
-    def sendFile(self,commandArgs):
+    def sendFileTCP(self,commandArgs):
+        self.sendfile(self.talksock,commandArgs,self.recoverTCP)
+        self.talksock.sendMsg("file downloaded")
+
+    def recvFileTCP(self,commandArgs):
+        self.receivefile(self.talksock,commandArgs,self.recoverTCP)
+        self.talksock.sendMsg("file uploaded")
+
+    def recoverTCP():
         pass
 
-
-    def recvFile(self,commandArgs):
+    def recowerUdp():
         pass
-
 
     def __clientCommandsHandling(self):
         while True:
@@ -105,7 +109,7 @@ class TCPServer(Connection):
                     
     def __registerNewClient(self):
         contactSock,self.curClientAddr = self.servSock.accept()
-        self.talksock = SocketWrapper(contactSock)
+        self.talksock.raw_sock = contactSock
         #get id from client
         id = self.talksock.recvNum()
         self.writeClientId(id)
