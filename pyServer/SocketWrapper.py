@@ -1,11 +1,12 @@
 ﻿from socket import*
+import struct
 
 class SocketWrapper:
 
     def __init__(self,**sockArgs):
         self.raw_sock = sockArgs.get('raw_sock')
-        self.addr_info = sockArgs.get('addrInfo')
-    
+        self.addr_info = sockArgs.get('addr_info')
+   
     def recvMsg(self):
         # first byte = message length
         length = int.from_bytes(self.raw_sock.recv(1),byteorder='big') 
@@ -16,10 +17,10 @@ class SocketWrapper:
         self.raw_sock.send(len(msg).to_bytes(1,byteorder='big'))
         self.raw_sock.sendall(msg.encode('utf-8'))
 
-    def sendNum(self,n):
+    def sendInt(self,n):
         self.raw_sock.send(n.to_bytes(4,byteorder='big'))
 
-    def recvNum(self):
+    def recvInt(self):
         return int.from_bytes(self.raw_sock.recv(4),byteorder='big')
 
     def recvall(self,length):
@@ -31,13 +32,13 @@ class SocketWrapper:
        return data
 
     def sendConfirm(self):
-        return self.sendNum(1)
+        return self.sendInt(1)
 
     def sendRefuse(self):
-        return self.sendNum(0)
+        return self.sendInt(0)
 
-    def revcAck(self):
-        return True if self.recvNum() == 1 else False
+    def recvAck(self):
+        return True if self.recvInt() == 1 else False
 
     def setSendBufferSize(self,value):
         self.raw_sock.setsockopt(SOL_SOCKET, SO_SNDBUF, value)
@@ -52,13 +53,17 @@ class SocketWrapper:
         return self.raw_sock.getsockopt(SOL_SOCKET, SO_RCVBUF)
     
     def setSendTimeout(self,timeOutSec):
-        self.raw_sock.setsockopt(SOL_SOCKET, SO_SNDTIMEO, timeOutSec)
+        timeval = struct.pack("2I",timeOutSec,0)
+        self.raw_sock.setsockopt(SOL_SOCKET, SO_SNDTIMEO, timeval )
 
     def disableSendTimeout(self):
-        self.raw_sock.setsockopt(SOL_SOCKET, SO_RCVTIMEO,0)
+        timeval = struct.pack("2I",0,0)
+        self.raw_sock.setsockopt(SOL_SOCKET, SO_RCVTIMEO, timeval)
 
     def setReceiveTimeout(self,timeOutSec):
-        self.raw_sock.setsockopt(SOL_SOCKET, SO_RCVTIMEO, timeOutSec)
+        timeval = struct.pack("2I",timeOutSec,0)
+        self.raw_sock.setsockopt(SOL_SOCKET, SO_RCVTIMEO, timeval)
 
     def disableReceiveTimeout(self):
-        self.raw_sock.setsockopt(SOL_SOCKET, SO_SNDTIMEO,0)
+        timeval = struct.pack("2I",0,0)
+        self.raw_sock.setsockopt(SOL_SOCKET, SO_SNDTIMEO, timeval)

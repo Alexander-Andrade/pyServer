@@ -11,7 +11,7 @@ import types
 class TCPServer(Connection):
 
 
-    def __init__(self, IP,port,nConnections = 1,sendBuflen = 2048,timeOut = 30):
+    def __init__(self, IP,port,nConnections = 1,sendBuflen = 2048,timeOut = 60):
 
         super().__init__(sendBuflen,timeOut)
         self.IP = IP
@@ -24,8 +24,8 @@ class TCPServer(Connection):
         self.commands.update({'echo':self.echo,
                               'time':self.time,
                               'quit':self.quit,
-                              'download':self.sendFile,
-                              'upload':self.recvFile})
+                              'download':self.sendFileTCP,
+                              'upload':self.recvFileTCP})
        
 
     def __createServer(self, IP,port,nConnections = 1):
@@ -111,7 +111,7 @@ class TCPServer(Connection):
         contactSock,self.curClientAddr = self.servSock.accept()
         self.talksock.raw_sock = contactSock
         #get id from client
-        id = self.talksock.recvNum()
+        id = self.talksock.recvInt()
         self.writeClientId(id)
 
     def workWithClients(self):

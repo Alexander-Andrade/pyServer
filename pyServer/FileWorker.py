@@ -57,9 +57,9 @@ class FileWorker:
         self.fileLen = os.path.getsize(fileName)
         #send hint configs to the receiver
         try:
-            self.sock.sendNum(self.bufferSize)
-            self.sock.sendNum(self.timeOut)
-            self.sock.sendNum(self.fileLen)
+            self.sock.sendInt(self.bufferSize)
+            self.sock.sendInt(self.timeOut)
+            self.sock.sendInt(self.fileLen)
         except OSError:
             raise FileWorkerError("can't send file metadata")
         self.outFileInfo
@@ -72,7 +72,9 @@ class FileWorker:
                 if not data:
                     self.sock.raw_sock.settimeout(self.timeOut)
                     #receiver acknowledge received data size
-                    receiverPos = self.sock.recvNum()
+                    receiverPos = self.sock.recvInt()
+                    #return socket into blocking mode
+                    self.sock.raw_sock.settimeout(None)
                     if receiverPos == self.filePos:
                         break
                     else:
@@ -80,7 +82,7 @@ class FileWorker:
 
                 #send data portion
                 #error will rase OSError    
-                self.sock.raw_sock(data)
+                self.sock.raw_sock.send(data)
                 self.filePos += len(data)
         except OSError as e:
             #file transfer reconnection
@@ -91,22 +93,22 @@ class FileWorker:
 
     def receive(self,fileName):
         self.fileName = fileName
+        #set timeout on receive op,to avoid program freezing
+        self.sock.raw_sock.settimeout(self.timeOut)
         #waiting for checking file existance from transiving side
         if not self.sock.recvAck():
             raise FileWorkerError("there is no such file")
         try:
-            self.file.open(fileName,"wb")
+            self.file = open(fileName,"wb")
         except OSError:
             raise FileWorkerError("can't create the file")
         #get hints configs from the transmitter
         try:
-            self.bufferSize = self.sock.recvNum()
-            self.timeOut = self.sock.recvNum()
-            self.fileLen = self.sock.recvNum()
+            self.bufferSize = self.sock.recvInt()
+            self.timeOut = self.sock.recvInt()
+            self.fileLen = self.sock.recvInt()
         except OSError:
             raise FileWorkerError("can't receive file metadata")
-        #set timeout on receive op,to avoid program freezing
-        self.sock.setReceiveTimeout(self.timeOut)
         self.outFileInfo()
         #file writing cycle
         try:
@@ -117,13 +119,14 @@ class FileWorker:
 
                 if self.filePos == self.fileLen:
                     #send ack to end the file transmittion
-                    sefl.sock.sendNum(self.filePos)
+                    self.sock.sendInt(self.filePos)
                     break
-        except OSError as msg:
+        except OSError as e:
              #file transfer reconnection
             print(e.args[0])
         finally:
-            self.sock.disableReceiveTimeout()
+            #return socket to the blocking mode
+            self.sock.raw_sock.settimeout(None)
             self.file.close()
 
 
