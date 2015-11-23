@@ -24,14 +24,14 @@ class SockWrapper:
             """
         except OSError as msg:
             self.raw_sock = None
-            return false                   
+            return False                   
         try:
             self.raw_sock.bind(sockaddr)
         except OSError as msg:
             self.raw_sock.close()
             self.raw_sock = None
-            return false
-        return true          
+            return False
+        return True          
 
     def _attachServSock(self):
         #  getaddrinfo returns a list of 5-tuples with the following structure(family, type, sock, canonname, sockaddr)
@@ -49,15 +49,15 @@ class SockWrapper:
             self.raw_sock = socket(af_family,socktype,proto)
         except OSError as msg:
             self.raw_sock = None
-            return false
+            return False
         if self.proto == IPPROTO_TCP:
             try:
                 self.raw_sock.connect(sockaddr)
             except OSError as msg:
                 self.raw_sock.close()
                 self.raw_sock = None
-                return false
-            return true
+                return False
+            return True
 
     def _attachClientSock(self):
         for self.addr_info in getaddrinfo(self.inetAddr[0],self.inetAddr[1],self.family,self.type,self.proto):
@@ -68,7 +68,7 @@ class SockWrapper:
             sys.exit(1)  
     
     def reattachClientSock(self):
-        return attachClientToAddr(self,self.addr_info)
+        return self.attachClientToAddr(self.addr_info)
 
     def send(self,data):
         return self.raw_sock.send(data)

@@ -86,7 +86,7 @@ class FileWorker:
                 self.filePos += len(data)
         except OSError as e:
             #file transfer reconnection
-            self.recoveryFunc(self.timeOut)
+            self.recoveryFunc(self.timeOut << 1)
         finally:
             self.file.close() 
             
@@ -123,7 +123,7 @@ class FileWorker:
                     break
         except OSError as e:
              #file transfer reconnection
-            print(e.args[0])
+            self.recoveryFunc(self.timeOut)
         finally:
             #return socket to the blocking mode
             self.sock.raw_sock.settimeout(None)

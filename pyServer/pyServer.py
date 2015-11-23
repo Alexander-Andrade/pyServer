@@ -11,7 +11,7 @@ import types
 class TCPServer(Connection):
 
 
-    def __init__(self, IP,port,nConnections = 1,sendBuflen = 2048,timeOut = 60):
+    def __init__(self, IP,port,nConnections = 1,sendBuflen = 2048,timeOut = 15):
 
         super().__init__(sendBuflen,timeOut)
         self.servSock = TCP_ServSockWrapper(IP,port,nConnections) 
@@ -50,7 +50,7 @@ class TCPServer(Connection):
 
 
     def recoverTCP(self,timeOut):
-        self.servSock.settimeout(timeOut)
+        self.servSock.raw_sock.settimeout(timeOut)
         try:
             self.__registerNewClient()
         except TimeoutError:
@@ -110,6 +110,6 @@ class TCPServer(Connection):
    
 if __name__ == "__main__":
     
-    server = TCPServer(None,sys.argv[1])
+    server = TCPServer("192.168.1.2","6000")
     server.workWithClients()
     
