@@ -12,7 +12,9 @@ class SockWrapper:
         self.type = sockArgs.get('type',SOCK_STREAM)
         self.proto = sockArgs.get('proto',IPPROTO_TCP)
 
-
+    def __del__(self):
+        self.raw_sock.shutdown(SHUT_WR)
+        self.raw_sock.close()
     def attachServToAddr(self,addrInfo):
         af_family,socktype,sock,canonname,sockaddr = addrInfo
         try:
@@ -31,7 +33,7 @@ class SockWrapper:
             self.raw_sock.close()
             self.raw_sock = None
             return False
-        return true          
+        return True          
 
     def _attachServSock(self):
         #  getaddrinfo returns a list of 5-tuples with the following structure(family, type, sock, canonname, sockaddr)

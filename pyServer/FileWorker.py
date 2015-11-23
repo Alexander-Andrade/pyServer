@@ -61,33 +61,36 @@ class FileWorker:
             self.sock.sendInt(self.timeOut)
             self.sock.sendInt(self.fileLen)
         except OSError:
+            self.file.close()
             raise FileWorkerError("can't send file metadata")
         self.outFileInfo
         #file transfer
         try:
             while True:
-                data = self.file.read(self.bufferSize)
+                try:
+                    data = self.file.read(self.bufferSize)
 
-                #if eof
-                if not data:
-                    self.sock.raw_sock.settimeout(self.timeOut)
-                    #receiver acknowledge received data size
-                    receiverPos = self.sock.recvInt()
-                    #return socket into blocking mode
-                    self.sock.raw_sock.settimeout(None)
-                    if receiverPos == self.filePos:
-                        break
-                    else:
-                        raise OSError("fail to transfer file")
+                    #if eof
+                    if not data:
+                        self.sock.raw_sock.settimeout(self.timeOut)
+                        #receiver acknowledge received data size
+                        receiverPos = self.sock.recvInt()
+                        #return socket into blocking mode
+                        self.sock.raw_sock.settimeout(None)
+                        if receiverPos == self.filePos:
+                            break
+                        else:
+                            raise OSError("fail to transfer file")
 
-                #send data portion
-                #error will rase OSError    
-                self.sock.send(data)
-                self.filePos += len(data)
-        except OSError as e:
-            #file transfer reconnection
-            self.senderRecovers()
-
+                    #send data portion
+                    #error will rase OSError    
+                    self.sock.send(data)
+                    self.filePos += len(data)
+                except OSError as e:
+                    #file transfer reconnection
+                    self.senderRecovers()
+        except FileWorkerError:
+            raise
         finally:
             self.file.close() 
          
@@ -97,7 +100,7 @@ class FileWorker:
         self.sock.setSendBufferSize(self.bufferSize)
         #get file position to send from
         self.sock.raw_sock.settimeout(self.timeOut)
-        self.filePos = self.sock.recv()
+        self.filePos = self.sock.recvInt()
         #remove timeout
         self.sock.raw_sock.settimeout(None)
         #set file position to read from
@@ -106,7 +109,7 @@ class FileWorker:
     def receive(self,fileName):
         self.fileName = fileName
         #set timeout on receive op,to avoid program freezing
-        self.sock.raw_sock.settimeout(self.timeOut)
+        self.sock.setReceiveTimeout(self.timeOut)
         #waiting for checking file existance from transiving side
         if not self.sock.recvAck():
             raise FileWorkerError("there is no such file")
@@ -125,18 +128,20 @@ class FileWorker:
         #file writing cycle
         try:
             while True:
-                data = self.sock.recv(self.bufferSize)
-                self.file.write(data)
-                self.filePos += len(data)
+                try:
+                    data = self.sock.recv(self.bufferSize)
+                    self.file.write(data)
+                    self.filePos += len(data)
 
-                if self.filePos == self.fileLen:
-                    #send ack to end the file transmittion
-                    self.sock.sendInt(self.filePos)
-                    break
-        except OSError as e:
-             #file transfer reconnection
-            self.receiverRecovers()
-
+                    if self.filePos == self.fileLen:
+                        #send ack to end the file transmittion
+                        self.sock.sendInt(self.filePos)
+                        break
+                except OSError as e:
+                     #file transfer reconnection
+                    self.receiverRecovers()
+        except FileWorkerError:
+            raise
         finally:
             #return socket to the blocking mode
             self.sock.raw_sock.settimeout(None)
@@ -146,7 +151,7 @@ class FileWorker:
     def receiverRecovers(self):
         self.sock = self.recoveryFunc(self.timeOut << 1)
         #gives file position to start from
-        self.sock.send(self.filePos)
+        self.sock.sendInt(self.filePos)
         #timeout on receive op
         self.sock.raw_sock.settimeout(self.timeOut)
 

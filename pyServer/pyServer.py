@@ -83,8 +83,8 @@ class TCPServer(Connection):
                 #file transfer exception
                 print(e.args[0])
             except OSError:
-                #we can't crash the server
-                pass 
+                #wait for the new client
+                break
 
 
     def writeClientId(self,id):
