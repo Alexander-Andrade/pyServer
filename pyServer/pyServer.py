@@ -3,8 +3,8 @@ import socket
 import re   #regular expressions
 from Connection import Connection
 from FileWorker import FileWorkerError
-from SocketWrapper import SocketWrapper
-import datetime
+from SocketWrapper import*
+import time
 import multiprocessing
 import types
 
@@ -14,9 +14,8 @@ class TCPServer(Connection):
     def __init__(self, IP,port,nConnections = 1,sendBuflen = 2048,timeOut = 60):
 
         super().__init__(sendBuflen,timeOut)
-        self.IP = IP
-        self.port = port
-        self.__createServer(IP,port,nConnections)
+        self.servSock = TCP_ServSockWrapper(IP,port,nConnections) 
+       
         self.__fillCommandDict()
         self.clientsId = []
 
@@ -28,41 +27,12 @@ class TCPServer(Connection):
                               'upload':self.recvFileTCP})
        
 
-    def __createServer(self, IP,port,nConnections = 1):
-        #  getaddrinfo returns a list of 5-tuples with the following structure(family, type, sock, canonname, sockaddr)
-        for addrInfo in socket.getaddrinfo(self.IP,self.port,socket.AF_INET,
-                                           socket.SOCK_STREAM,socket.IPPROTO_TCP,socket.AI_PASSIVE):
-            af_family,socktype,sock,canonname,sockaddr = addrInfo
-            try:
-                self.servSock = socket.socket(af_family,socktype,sock)
-                """All errors raise exceptions. The normal exceptions for invalid argument
-                types and out-of-memory conditions can be raised; starting from Python 3.3,
-                errors related to socket or address semantics raise OSError or one of its
-                subclasses (they used to raise socket.error).
-                """
-            except OSError as msg:
-                self.servSock = None
-                continue                   
-            try:
-                self.servSock.bind(sockaddr)
-                self.servSock.listen(nConnections)
-            except OSError as msg:
-                self.servSock.close()
-                self.servSock = None
-                continue
-            break
-        if self.servSock is None:
-            print("can't create server")
-            sys.exit(1)
-        self.talksock = SocketWrapper(addr_info=addrInfo)
-
-
     def echo(self,commandArgs):
         self.talksock.sendMsg(commandArgs)
 
 
     def time(self,commandArgs):
-        self.talksock.sendMsg(str(datetime.datetime.now()) )
+        self.talksock.sendMsg(time.asctime())
 
     def quit(self,commandArgs):
         self.talksock.raw_sock.shutdown(socket.SHUT_RD)
@@ -73,30 +43,48 @@ class TCPServer(Connection):
         self.sendfile(self.talksock,commandArgs,self.recoverTCP)
         self.talksock.sendMsg("file downloaded")
 
+
     def recvFileTCP(self,commandArgs):
         self.receivefile(self.talksock,commandArgs,self.recoverTCP)
         self.talksock.sendMsg("file uploaded")
 
-    def recoverTCP():
-        pass
+
+    def recoverTCP(self,timeOut):
+        self.servSock.settimeout(timeOut)
+        try:
+            self.__registerNewClient()
+        except TimeoutError:
+            raise FileWorkerError("fail to reconnect")
+        #compare prev and cur clients id's, may be the same client
+        if self.clientsId[0] != self.clientsId[1]:
+            raise FileWorkerError("new client has connected")
+        return self.talksock
+
 
     def recowerUdp():
         pass
 
     def __clientCommandsHandling(self):
         while True:
-            message = self.talksock.recvMsg()
-            if len(message) == 0:
-                break
-            regExp = re.compile("[A-Za-z0-9_]+ *.*")
-            if regExp.match(message) is None:
-                self.talksock.sendMsg("invalid command format \"" + message + "\"")
-                continue
-            if not self.catchCommand(message):
-                self.talksock.sendMsg("unknown command")
-            #quit
-            if message.find("quit") != -1:
-                break 
+            try:
+                message = self.talksock.recvMsg()
+                if len(message) == 0:
+                    break
+                regExp = re.compile("[A-Za-z0-9_]+ *.*")
+                if regExp.match(message) is None:
+                    self.talksock.sendMsg("invalid command format \"" + message + "\"")
+                    continue
+                if not self.catchCommand(message):
+                    self.talksock.sendMsg("unknown command")
+                #quit
+                if message.find("quit") != -1:
+                    break
+            except FileWorkerError as e:
+                #file transfer exception
+                print(e.args[0])
+            except OSError:
+                #we can't crash the server
+                pass 
 
 
     def writeClientId(self,id):
@@ -108,8 +96,8 @@ class TCPServer(Connection):
             
                     
     def __registerNewClient(self):
-        contactSock,self.curClientAddr = self.servSock.accept()
-        self.talksock.raw_sock = contactSock
+        sock, addr = self.servSock.raw_sock.accept()
+        self.talksock = SockWrapper(raw_sock=sock,inetAddr=addr)
         #get id from client
         id = self.talksock.recvInt()
         self.writeClientId(id)

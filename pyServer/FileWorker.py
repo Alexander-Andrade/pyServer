@@ -1,4 +1,4 @@
-﻿from SocketWrapper import SocketWrapper
+﻿from SocketWrapper import*
 import os
 import io
 import sys
@@ -82,11 +82,11 @@ class FileWorker:
 
                 #send data portion
                 #error will rase OSError    
-                self.sock.raw_sock.send(data)
+                self.sock.send(data)
                 self.filePos += len(data)
         except OSError as e:
             #file transfer reconnection
-            print(e.args[0])
+            self.recoveryFunc(self.timeOut)
         finally:
             self.file.close() 
             
@@ -113,7 +113,7 @@ class FileWorker:
         #file writing cycle
         try:
             while True:
-                data = self.sock.raw_sock.recv(self.bufferSize)
+                data = self.sock.recv(self.bufferSize)
                 self.file.write(data)
                 self.filePos += len(data)
 
