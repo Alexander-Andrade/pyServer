@@ -86,10 +86,22 @@ class FileWorker:
                 self.filePos += len(data)
         except OSError as e:
             #file transfer reconnection
-            self.recoveryFunc(self.timeOut << 1)
+            self.senderRecovers()
+
         finally:
             self.file.close() 
+         
             
+    def senderRecovers(self):
+        self.sock = self.recoveryFunc(self.timeOut << 1)
+        self.sock.setSendBufferSize(self.bufferSize)
+        #get file position to send from
+        self.sock.raw_sock.settimeout(self.timeOut)
+        self.filePos = self.sock.recv()
+        #remove timeout
+        self.sock.raw_sock.settimeout(None)
+        #set file position to read from
+        self.file.seek(self.filePos) 
 
     def receive(self,fileName):
         self.fileName = fileName
@@ -123,12 +135,18 @@ class FileWorker:
                     break
         except OSError as e:
              #file transfer reconnection
-            self.recoveryFunc(self.timeOut)
+            self.receiverRecovers()
+
         finally:
             #return socket to the blocking mode
             self.sock.raw_sock.settimeout(None)
             self.file.close()
 
 
-
+    def receiverRecovers(self):
+        self.sock = self.recoveryFunc(self.timeOut << 1)
+        #gives file position to start from
+        self.sock.send(self.filePos)
+        #timeout on receive op
+        self.sock.raw_sock.settimeout(self.timeOut)
 

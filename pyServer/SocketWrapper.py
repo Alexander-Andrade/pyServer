@@ -31,7 +31,7 @@ class SockWrapper:
             self.raw_sock.close()
             self.raw_sock = None
             return False
-        return True          
+        return true          
 
     def _attachServSock(self):
         #  getaddrinfo returns a list of 5-tuples with the following structure(family, type, sock, canonname, sockaddr)
@@ -125,19 +125,31 @@ class SockWrapper:
         return self.raw_sock.getsockopt(SOL_SOCKET, SO_RCVBUF)
     
     def setSendTimeout(self,timeOutSec):
-        timeval = struct.pack("2I",timeOutSec,0)
+        if sys.platform.startswith('win'):
+            timeval = timeOutSec * 1000
+        elif sys.platform.startswith('linux'):   
+            timeval = struct.pack("2I",timeOutSec,0)
         self.raw_sock.setsockopt(SOL_SOCKET, SO_SNDTIMEO, timeval )
 
     def disableSendTimeout(self):
-        timeval = struct.pack("2I",0,0)
+        if sys.platform.startswith('win'):
+            timeval = 0
+        elif sys.platform.startswith('linux'):
+            timeval = struct.pack("2I",0,0)
         self.raw_sock.setsockopt(SOL_SOCKET, SO_RCVTIMEO, timeval)
 
     def setReceiveTimeout(self,timeOutSec):
-        timeval = struct.pack("2I",timeOutSec,0)
+        if sys.platform.startswith('win'):
+            timeval = timeOutSec * 1000
+        elif sys.platform.startswith('linux'):   
+            timeval = struct.pack("2I",timeOutSec,0)
         self.raw_sock.setsockopt(SOL_SOCKET, SO_RCVTIMEO, timeval)
 
     def disableReceiveTimeout(self):
-        timeval = struct.pack("2I",0,0)
+        if sys.platform.startswith('win'):
+            timeval = 0
+        elif sys.platform.startswith('linux'):
+            timeval = struct.pack("2I",0,0)
         self.raw_sock.setsockopt(SOL_SOCKET, SO_SNDTIMEO, timeval)
 
 
