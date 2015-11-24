@@ -124,6 +124,7 @@ class FileWorker:
             self.timeOut = self.sock.recvInt()
             self.fileLen = self.sock.recvInt()
         except OSError:
+            self.file.close()
             raise FileWorkerCritError("can't receive file metadata")
         self.outFileInfo()
         #file writing cycle
@@ -144,8 +145,6 @@ class FileWorker:
         except FileWorkerCritError:
             raise
         finally:
-            #return socket to the blocking mode
-            self.sock.raw_sock.settimeout(None)
             self.file.close()
 
 
@@ -153,7 +152,7 @@ class FileWorker:
         try:
             self.sock = self.recoveryFunc(self.timeOut << 1)
         except OSError as e:
-            raise FileWorkerCritError(e.args)
+            raise FileWorkerCritError(e)
         #gives file position to start from
         self.sock.sendInt(self.filePos)
         #timeout on receive op
