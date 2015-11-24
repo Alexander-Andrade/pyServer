@@ -2,7 +2,7 @@
 import socket
 import re   #regular expressions
 from Connection import Connection
-from FileWorker import FileWorkerError
+from FileWorker import*
 from SocketWrapper import*
 import time
 import multiprocessing
@@ -51,7 +51,12 @@ class TCPServer(Connection):
 
     def recoverTCP(self,timeOut):
         self.servSock.raw_sock.settimeout(timeOut)
-        self.__registerNewClient()
+        try:
+            self.__registerNewClient()
+        except OSError as e:
+            #disable timeout
+            self.servSock.raw_sock.settimeout(None)
+            raise 
         #compare prev and cur clients id's, may be the same client
         if self.clientsId[0] != self.clientsId[1]:
             raise OSError("new client has connected")
@@ -77,9 +82,10 @@ class TCPServer(Connection):
                 if message.find("quit") != -1:
                     break
             except FileWorkerError as e:
-                #file transfer exception
-                print(e.args[0])
-            except OSError:
+                #can work with the same client
+                print(e)
+                
+            except (OSError,FileWorkerCritError):
                 #wait for the new client
                 break
 
