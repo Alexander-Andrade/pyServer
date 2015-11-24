@@ -138,7 +138,7 @@ class SockWrapper:
             timeval = 0
         elif sys.platform.startswith('linux'):
             timeval = struct.pack("2I",0,0)
-        self.raw_sock.setsockopt(SOL_SOCKET, SO_RCVTIMEO, timeval)
+        self.raw_sock.setsockopt(SOL_SOCKET, SO_SNDTIMEO, timeval)
 
     def setReceiveTimeout(self,timeOutSec):
         if sys.platform.startswith('win'):
@@ -152,7 +152,7 @@ class SockWrapper:
             timeval = 0
         elif sys.platform.startswith('linux'):
             timeval = struct.pack("2I",0,0)
-        self.raw_sock.setsockopt(SOL_SOCKET, SO_SNDTIMEO, timeval)
+        self.raw_sock.setsockopt(SOL_SOCKET, SO_RCVTIMEO, timeval)
 
 
 

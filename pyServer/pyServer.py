@@ -51,13 +51,10 @@ class TCPServer(Connection):
 
     def recoverTCP(self,timeOut):
         self.servSock.raw_sock.settimeout(timeOut)
-        try:
-            self.__registerNewClient()
-        except TimeoutError:
-            raise FileWorkerError("fail to reconnect")
+        self.__registerNewClient()
         #compare prev and cur clients id's, may be the same client
         if self.clientsId[0] != self.clientsId[1]:
-            raise FileWorkerError("new client has connected")
+            raise OSError("new client has connected")
         return self.talksock
 
 
