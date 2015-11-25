@@ -28,11 +28,12 @@ class FileWorker:
 
     def outFileInfo(self):
         #print file name
-        print("filename:",end='')
-        print(self.fileName)
+        print("filename: ",end='',flush=True)
+        print(self.fileName,flush=True)
         #file size
-        print("file size:",end='')
+        print("file size: ",end='',flush=True)
         print(self.fileLen,flush=True)
+        sys.stdout.flush()
     
 
     def percentsOfLoading(self,bytesWrite):
@@ -45,11 +46,11 @@ class FileWorker:
         if i == 0: i += 1
         for i in range(i,percent):
             if i % milestone == 0:
-                print(j)
+                print(i,flush=True)
             else:
-                print(placeholder,end='')
+                print(placeholder,end='',flush=True)
         if percent == 100:
-            print(percent,end='',flush=True)
+            print(percent,flush=True)
         self.loadingPercent = percent 
 
 
@@ -79,7 +80,7 @@ class FileWorker:
         except OSError:
             self.file.close()
             raise FileWorkerCritError("can't send file metadata")
-        self.outFileInfo
+        self.outFileInfo()
         #file transfer
         try:
             while True:
@@ -101,9 +102,10 @@ class FileWorker:
 
                     #send data portion
                     #error will rase OSError 
-                    self.actualizeAndshowPercents(self.percentsOfLoading(self.filePos),20,'.')   
-                    self.sock.send(data + self.loadingPercent.to_bytes(1,byteorder='big') ,MSG_OOB)
                     self.filePos += len(data)
+                    self.actualizeAndshowPercents(self.percentsOfLoading(self.filePos),20,'.')   
+                    #self.sock.send(data)
+                    self.sock.send(data + self.loadingPercent.to_bytes(1,byteorder='big') ,MSG_OOB)
                 except OSError as e:
                     #file transfer reconnection
                     self.senderRecovers()
@@ -156,7 +158,7 @@ class FileWorker:
                     #show OOB byte
                     self.actualizeAndshowPercents(self.loadingPercent,20,'.')
                     #usual data
-                    data = self.sock.recv(self.bufferSize)
+                    data = self.sock.recv(self.bufferSize - 1)
                     self.file.write(data)
                     self.filePos += len(data)
 
@@ -170,6 +172,7 @@ class FileWorker:
         except FileWorkerCritError:
             raise
         finally:
+            self.sock.disableReceiveTimeout()
             self.file.close()
 
 

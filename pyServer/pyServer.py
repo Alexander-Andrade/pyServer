@@ -15,7 +15,7 @@ class TCPServer(Connection):
 
         super().__init__(sendBuflen,timeOut)
         self.servSock = TCP_ServSockWrapper(IP,port,nConnections) 
-       
+        self.talksock = None
         self.__fillCommandDict()
         self.clientsId = []
 
@@ -35,8 +35,7 @@ class TCPServer(Connection):
         self.talksock.sendMsg(time.asctime())
 
     def quit(self,commandArgs):
-        self.talksock.raw_sock.shutdown(socket.SHUT_RD)
-        self.talksock.raw_sock.close()
+        self.talksock = None
 
 
     def sendFileTCP(self,commandArgs):
@@ -100,6 +99,8 @@ class TCPServer(Connection):
                     
     def __registerNewClient(self):
         sock, addr = self.servSock.raw_sock.accept()
+        if self.talksock is not None:
+            self.talksock = None
         self.talksock = SockWrapper(raw_sock=sock,inetAddr=addr)
         #get id from client
         id = self.talksock.recvInt()
