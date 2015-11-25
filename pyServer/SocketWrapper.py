@@ -74,14 +74,15 @@ class SockWrapper:
     def reattachClientSock(self):
         return self.attachClientToAddr(self.addr_info)
 
-    def send(self,data):
-        return self.raw_sock.send(data)
-
+    def send(self,data,flags=None):
+        return self.raw_sock.send(data,flags) 
+        
     def sendall(self,data):
         return self.raw_sock.sendall(data)
 
-    def recv(self,size):
-        return self.raw_sock.recv(size)
+    def recv(self,size,flags=None):
+        return self.raw_sock.recv(size,flags)
+
 
     def recvMsg(self):
         # first byte = message length
@@ -127,7 +128,7 @@ class SockWrapper:
 
     def getReceiveBufferSize(self):
         return self.raw_sock.getsockopt(SOL_SOCKET, SO_RCVBUF)
-    
+
     def setSendTimeout(self,timeOutSec):
         if sys.platform.startswith('win'):
             timeval = timeOutSec * 1000

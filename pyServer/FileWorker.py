@@ -33,6 +33,24 @@ class FileWorker:
         #file size
         print("file size:",end='')
         print(self.fileLen,flush=True)
+    
+
+    def percentsOfLoading(self,bytesWrite):
+        return int((float(bytesWrite) / self.fileLen) * 100)
+
+    def actualizeAndshowPercents(self,percent,milestone,placeholder):
+        #skip zeros
+        if percent == 0: return
+        i = self.loadingPercent
+        if i == 0: i += 1
+        for i in range(i,percent):
+            if i % milestone == 0:
+                print(j)
+            else:
+                print(placeholder,end='')
+        if percent == 100:
+            print(percent,end='',flush=True)
+        self.loadingPercent = percent 
 
 
     def send(self,fileName):
@@ -66,7 +84,8 @@ class FileWorker:
         try:
             while True:
                 try:
-                    data = self.file.read(self.bufferSize)
+                    #one byte for the OOB data
+                    data = self.file.read(self.bufferSize - 1)
 
                     #if eof
                     if not data:
@@ -81,8 +100,9 @@ class FileWorker:
                             raise OSError("fail to transfer file")
 
                     #send data portion
-                    #error will rase OSError    
-                    self.sock.send(data)
+                    #error will rase OSError 
+                    self.actualizeAndshowPercents(self.percentsOfLoading(self.filePos),20,'.')   
+                    self.sock.send(data + self.loadingPercent.to_bytes(1,byteorder='big') ,MSG_OOB)
                     self.filePos += len(data)
                 except OSError as e:
                     #file transfer reconnection
@@ -131,6 +151,11 @@ class FileWorker:
         try:
             while True:
                 try:
+                    #OOB data (urgent)
+                    self.loadingPercent = int.from_bytes(self.sock.recv(1,MSG_OOB),byteorder='big')
+                    #show OOB byte
+                    self.actualizeAndshowPercents(self.loadingPercent,20,'.')
+                    #usual data
                     data = self.sock.recv(self.bufferSize)
                     self.file.write(data)
                     self.filePos += len(data)
