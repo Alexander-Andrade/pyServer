@@ -11,7 +11,7 @@ import types
 class TCPServer(Connection):
 
 
-    def __init__(self, IP,port,nConnections = 1,sendBuflen = 2048,timeOut = 15):
+    def __init__(self, IP,port,nConnections = 1,sendBuflen = 1024,timeOut = 15):
 
         super().__init__(sendBuflen,timeOut)
         self.servSock = TCP_ServSockWrapper(IP,port,nConnections) 
@@ -35,7 +35,9 @@ class TCPServer(Connection):
         self.talksock.sendMsg(time.asctime())
 
     def quit(self,commandArgs):
-        self.talksock = None
+        self.talksock.raw_sock.shutdown(socket.SHUT_RDWR)
+        self.talksock.raw_sock.close()
+        self.talksock.raw_sock = None
 
 
     def sendFileTCP(self,commandArgs):
@@ -114,6 +116,6 @@ class TCPServer(Connection):
    
 if __name__ == "__main__":
     
-    server = TCPServer("192.168.1.2","6000")
+    server = TCPServer("192.168.1.4","6000")
     server.workWithClients()
     

@@ -105,7 +105,8 @@ class FileWorker:
                     self.actualizeAndshowPercents(self.percentsOfLoading(self.filePos),20,'.') 
           
                     #self.sock.send(data)
-                    self.sock.send(data + self.loadingPercent.to_bytes(1,byteorder='big') ,MSG_OOB)
+                    self.sock.send(self.loadingPercent.to_bytes(1,byteorder='big') ,MSG_OOB)
+                    self.sock.send(data)
                 except OSError as e:
                     #file transfer reconnection
                     self.senderRecovers()

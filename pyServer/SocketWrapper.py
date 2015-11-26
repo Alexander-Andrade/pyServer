@@ -12,10 +12,6 @@ class SockWrapper:
         self.type = sockArgs.get('type',SOCK_STREAM)
         self.proto = sockArgs.get('proto',IPPROTO_TCP)
 
-    def __del__(self):
-        self.raw_sock.shutdown(SHUT_RDWR)
-        self.raw_sock.close()
-        self.raw_sock = None
 
     def attachServToAddr(self,addrInfo):
         af_family,socktype,sock,canonname,sockaddr = addrInfo
@@ -104,7 +100,7 @@ class SockWrapper:
         n = self.recv(4)
         return struct.unpack("I", n)[0]
 
-    def recvall(self,length):
+    def receive(self,length):
        total = 0
        data = None
        while(total < n):
@@ -128,10 +124,18 @@ class SockWrapper:
         self.raw_sock.setsockopt(SOL_SOCKET, SO_RCVBUF,value)
 
     def getSendBufferSize(self):
-        return self.raw_sock.getsockopt(SOL_SOCKET, SO_SNDBUF)
+        size = self.raw_sock.getsockopt(SOL_SOCKET, SO_SNDBUF)
+        if sys.platform.startswith('win'):
+            return size
+        elif sys.platform.startswith('linux'):
+            return size // 2
 
     def getReceiveBufferSize(self):
-        return self.raw_sock.getsockopt(SOL_SOCKET, SO_RCVBUF)
+        size = self.raw_sock.getsockopt(SOL_SOCKET, SO_RCVBUF)
+        if sys.platform.startswith('win'):
+            return size
+        elif sys.platform.startswith('linux'):
+            return size // 2
 
     def setSendTimeout(self,timeOutSec):
         if sys.platform.startswith('win'):

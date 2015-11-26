@@ -7,8 +7,6 @@ from FileWorker import FileWorker
 class Connection:
     
     def __init__(self,sendBufLen,timeOut):
-        
-        self.id = randint(0,65535 - 1)  
         self.sendBufLen = sendBufLen
         self.timeOut = timeOut
         self.commands = dict()
