@@ -5,19 +5,21 @@ from Connection import Connection
 from FileWorker import*
 from SocketWrapper import*
 import time
-import multiprocessing
-import types
+import multiprocessing as mp
+
 
 class TCPServer(Connection):
 
 
     def __init__(self, IP,port,nConnections = 1,sendBuflen = 1024,timeOut = 15):
-
         super().__init__(sendBuflen,timeOut)
         self.servSock = TCP_ServSockWrapper(IP,port,nConnections) 
         self.talksock = None
         self.__fillCommandDict()
         self.clientsId = []
+        self.nProcesses = 5
+
+
 
     def __fillCommandDict(self):
         self.commands.update({'echo':self.echo,

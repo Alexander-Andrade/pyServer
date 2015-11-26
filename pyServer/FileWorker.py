@@ -80,13 +80,13 @@ class FileWorker:
             self.file.close()
             raise FileWorkerCritError("can't send file metadata")
         self.outFileInfo()
+        rest = 0
         #file transfer
         try:
             while True:
                 try:
                     #one byte for the OOB data
                     data = self.file.read(self.bufferSize - 1)
-
                     #if eof
                     if not data:
                         self.sock.setReceiveTimeout(self.timeOut)
@@ -98,13 +98,10 @@ class FileWorker:
                             break
                         else:
                             raise OSError("fail to transfer file")
-
                     #send data portion
                     #error will rase OSError 
                     self.filePos += len(data)
-                    self.actualizeAndshowPercents(self.percentsOfLoading(self.filePos),20,'.') 
-          
-                    #self.sock.send(data)
+                    self.actualizeAndshowPercents(self.percentsOfLoading(self.filePos),20,'.')
                     self.sock.send(self.loadingPercent.to_bytes(1,byteorder='big') ,MSG_OOB)
                     self.sock.send(data)
                 except OSError as e:
