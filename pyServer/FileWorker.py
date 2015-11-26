@@ -7,7 +7,6 @@ class FileWorkerError(Exception):
 class FileWorkerCritError(Exception):
     pass
   
-
 class FileWorker:
     
 
@@ -103,7 +102,8 @@ class FileWorker:
                     #send data portion
                     #error will rase OSError 
                     self.filePos += len(data)
-                    self.actualizeAndshowPercents(self.percentsOfLoading(self.filePos),20,'.')   
+                    self.actualizeAndshowPercents(self.percentsOfLoading(self.filePos),20,'.') 
+          
                     #self.sock.send(data)
                     self.sock.send(data + self.loadingPercent.to_bytes(1,byteorder='big') ,MSG_OOB)
                 except OSError as e:
@@ -155,6 +155,7 @@ class FileWorker:
                 try:
                     #OOB data (urgent)
                     self.loadingPercent = int.from_bytes(self.sock.recv(1,MSG_OOB),byteorder='big')
+                    
                     #show OOB byte
                     self.actualizeAndshowPercents(self.loadingPercent,20,'.')
                     #usual data

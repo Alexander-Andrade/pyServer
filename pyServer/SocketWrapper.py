@@ -62,7 +62,7 @@ class SockWrapper:
                 self.raw_sock = None
                 return False
             return True
-
+      
     def _attachClientSock(self):
         for self.addr_info in getaddrinfo(self.inetAddr[0],self.inetAddr[1],self.family,self.type,self.proto):
             if self.attachClientToAddr(self.addr_info):
@@ -98,10 +98,11 @@ class SockWrapper:
         self.sendall(msg.encode('utf-8'))
 
     def sendInt(self,n):
-        self.send(n.to_bytes(4,byteorder='big'))
+        self.send(struct.pack("I", n))
 
     def recvInt(self):
-        return int.from_bytes(self.recv(4),byteorder='big')
+        n = self.recv(4)
+        return struct.unpack("I", n)[0]
 
     def recvall(self,length):
        total = 0
@@ -136,29 +137,25 @@ class SockWrapper:
         if sys.platform.startswith('win'):
             timeval = timeOutSec * 1000
         elif sys.platform.startswith('linux'):   
-            timeval = struct.pack("2I",timeOutSec,0)
-        self.raw_sock.setsockopt(SOL_SOCKET, SO_SNDTIMEO, timeval )
+            self.raw_sock.setsockopt(SOL_SOCKET, SO_SNDTIMEO, struct.pack("LL",timeOutSec,0) )
 
     def disableSendTimeout(self):
         if sys.platform.startswith('win'):
             timeval = 0
         elif sys.platform.startswith('linux'):
-            timeval = struct.pack("2I",0,0)
-        self.raw_sock.setsockopt(SOL_SOCKET, SO_SNDTIMEO, timeval)
+            self.raw_sock.setsockopt(SOL_SOCKET, SO_SNDTIMEO, struct.pack("LL",0,0))
 
     def setReceiveTimeout(self,timeOutSec):
         if sys.platform.startswith('win'):
             timeval = timeOutSec * 1000
         elif sys.platform.startswith('linux'):   
-            timeval = struct.pack("2I",timeOutSec,0)
-        self.raw_sock.setsockopt(SOL_SOCKET, SO_RCVTIMEO, timeval)
+            self.raw_sock.setsockopt(SOL_SOCKET, SO_RCVTIMEO, struct.pack("LL",timeOutSec,0))
 
     def disableReceiveTimeout(self):
         if sys.platform.startswith('win'):
             timeval = 0
         elif sys.platform.startswith('linux'):
-            timeval = struct.pack("2I",0,0)
-        self.raw_sock.setsockopt(SOL_SOCKET, SO_RCVTIMEO, timeval)
+            self.raw_sock.setsockopt(SOL_SOCKET, SO_RCVTIMEO, struct.pack("LL",0,0))
 
 
 
