@@ -15,18 +15,17 @@ class TCPServer(Connection):
         super().__init__(sendBuflen,timeOut)
         self.servSock = TCP_ServSockWrapper(IP,port,nConnections) 
         self.talksock = None
+        self.udpServSock = UDP_ServSockWrapper(IP,port)
         self.__fillCommandDict()
-        self.clientsId = []
-        self.nProcesses = 5
-
-
 
     def __fillCommandDict(self):
         self.commands.update({'echo':self.echo,
                               'time':self.time,
                               'quit':self.quit,
                               'download':self.sendFileTCP,
-                              'upload':self.recvFileTCP})
+                              'upload':self.recvFileTCP,
+                              'download_udp':self.sendFileUDP,
+                              'upload_udp': self.recvFileUDP})
        
 
     def echo(self,commandArgs):
@@ -37,7 +36,7 @@ class TCPServer(Connection):
         self.talksock.sendMsg(time.asctime())
 
     def quit(self,commandArgs):
-        self.talksock.raw_sock.shutdown(socket.SHUT_RDWR)
+        self.talksock.raw_sock.shutdown(SHUT_RDWR)
         self.talksock.raw_sock.close()
         self.talksock.raw_sock = None
 
@@ -54,6 +53,7 @@ class TCPServer(Connection):
 
     def recoverTCP(self,timeOut):
         self.servSock.raw_sock.settimeout(timeOut)
+        prevClientId = self.talksock.id
         try:
             self.__registerNewClient()
         except OSError as e:
@@ -61,10 +61,22 @@ class TCPServer(Connection):
             self.servSock.raw_sock.settimeout(None)
             raise 
         #compare prev and cur clients id's, may be the same client
-        if self.clientsId[0] != self.clientsId[1]:
+        if self.talksock.id != prevClientId:
             raise OSError("new client has connected")
         return self.talksock
 
+
+    def sendFileUDP(self,commandArgs):
+        #get cur client addr
+        self.udpServSock.recvInt()
+        self.sendfile(self.udpServSock,commandArgs,self.recoverTCP)
+        self.talksock.sendMsg("file downloaded")
+
+    def recvFileUDP(self,commandArgs):
+        #get cur client addr
+        self.udpServSock.recvInt()
+        self.receivefile(self.udpServSock,commandArgs,self.recoverTCP)
+        self.talksock.sendMsg("file uploaded")
 
     def recowerUdp():
         pass
@@ -73,8 +85,9 @@ class TCPServer(Connection):
         while True:
             try:
                 message = self.talksock.recvMsg()
-                if len(message) == 0:
-                    break
+                if not message:
+                    self.talksock.sendMsg('empty command')
+                    continue
                 regExp = re.compile("[A-Za-z0-9_]+ *.*")
                 if regExp.match(message) is None:
                     self.talksock.sendMsg("invalid command format \"" + message + "\"")
@@ -91,24 +104,13 @@ class TCPServer(Connection):
             except (OSError,FileWorkerCritError):
                 #wait for the new client
                 break
-
-
-    def writeClientId(self,id):
-        if len(self.clientsId) == 2:
-            #pop old id
-            self.clientsId.pop(0)
-        #write new id
-        self.clientsId.append(id)
             
-                    
+                             
     def __registerNewClient(self):
         sock, addr = self.servSock.raw_sock.accept()
-        if self.talksock is not None:
-            self.talksock = None
         self.talksock = SockWrapper(raw_sock=sock,inetAddr=addr)
         #get id from client
-        id = self.talksock.recvInt()
-        self.writeClientId(id)
+        self.talksock.id = self.talksock.recvInt()
 
     def workWithClients(self):
         while True:
@@ -118,6 +120,6 @@ class TCPServer(Connection):
    
 if __name__ == "__main__":
     
-    server = TCPServer("192.168.1.4","6000")
+    server = TCPServer("192.168.1.2","6000")
     server.workWithClients()
     

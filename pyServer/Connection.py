@@ -1,5 +1,4 @@
 ﻿import sys
-from random import randint
 import re
 from SocketWrapper import*
 from FileWorker import FileWorker
